@@ -1,18 +1,17 @@
 using UnityEngine;
-using System;
 using System.Collections;
 using System.Runtime.InteropServices;
 
 
 public class UseRenderingPlugin : MonoBehaviour {
 
-    static IntPtr? _VideoPlayerClass;
+    static System.IntPtr? _VideoPlayerClass;
 
     [DllImport("RenderingPlugin")]
     private static extern void SetTextureFromUnity(System.IntPtr texture, int w, int h);
 
     [DllImport("RenderingPlugin")]
-    private static extern IntPtr GetRenderEventFunc();
+    private static extern System.IntPtr GetRenderEventFunc();
 
     [DllImport("RenderingPlugin")]
     private static extern int GetTextureID();
@@ -43,54 +42,34 @@ public class UseRenderingPlugin : MonoBehaviour {
                 TextureFormat.RGB24,
                 false,
                 true,
-               (IntPtr)textureID);
+               (System.IntPtr)textureID);
 
             oesTex.Apply();
-
 
             // Set texture onto our material
             GetComponent<Renderer>().material.mainTexture = oesTex;
         }
     }
 
-    static IntPtr VideoPlayerClass {
+    static System.IntPtr VideoPlayerClass {
         get {
             if (!_VideoPlayerClass.HasValue) {
-                try {
-                    IntPtr myVideoPlayerClass = AndroidJNI.FindClass("com/matthew/videoplayer/NativeVideoPlayer");
-
-                    if (myVideoPlayerClass != IntPtr.Zero) {
-                        _VideoPlayerClass = AndroidJNI.NewGlobalRef(myVideoPlayerClass);
-
-                        AndroidJNI.DeleteLocalRef(myVideoPlayerClass);
-                    } else {
-                        Debug.LogError("Failed to find NativeVideoPlayer class");
-                        _VideoPlayerClass = IntPtr.Zero;
-                    }
-                } catch (Exception ex) {
-                    Debug.LogError("Failed to find NativeVideoPlayer class");
-                    Debug.LogException(ex);
-                    _VideoPlayerClass = IntPtr.Zero;
-                }
+                System.IntPtr myVideoPlayerClass = AndroidJNI.FindClass("com/matthew/videoplayer/NativeVideoPlayer");
+                _VideoPlayerClass = AndroidJNI.NewGlobalRef(myVideoPlayerClass);
+                AndroidJNI.DeleteLocalRef(myVideoPlayerClass);
             }
             return _VideoPlayerClass.GetValueOrDefault();
         }
     }
 
     public void ButtonPressed() {
-        //PlayVideo();
+        PauseVideo();
     }
 
-    void PlayVideo() {
-        IntPtr methodID = AndroidJNI.GetStaticMethodID(VideoPlayerClass, "playVideo", "()V");
-        jvalue[] blankParams = new jvalue[0];
-        AndroidJNI.CallStaticVoidMethod(VideoPlayerClass, methodID, blankParams);
-    }
-
-    void SendMessageToPlugin() {
-        IntPtr methodID = AndroidJNI.GetStaticMethodID(VideoPlayerClass, "Test", "(Ljava/lang/String;)V");
-        jvalue[] blankParams = new jvalue[1];
-        blankParams[0].l = AndroidJNI.NewStringUTF("HelloFromUnity");
-        AndroidJNI.CallStaticVoidMethod(VideoPlayerClass, methodID, blankParams);
+    void PauseVideo() {
+        System.IntPtr methodID = AndroidJNI.GetStaticMethodID(VideoPlayerClass, "pause", "(Ljava/lang/String;)V");
+        jvalue[] videoId = new jvalue[1];
+        videoId[0].l = AndroidJNI.NewStringUTF("0");
+        AndroidJNI.CallStaticVoidMethod(VideoPlayerClass, methodID, videoId);
     }
 }
