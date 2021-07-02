@@ -4,14 +4,21 @@ public class Example : MonoBehaviour {
 
     [SerializeField]
     CustomVideoPlayer player1;
+    [SerializeField]
+    CustomVideoPlayer player2;
 
     void Start() {
-        player1.PrepareVideo("https://matthewhallberg.com/video/holo.mp4", OnVideo1Prepared);
+        player1.PrepareVideo("https://matthewhallberg.com/video/holo.mp4", player1.PlayVideo);
+        player2.PrepareVideo("https://matthewhallberg.com/video/screen.mp4", player2.PlayVideo);
     }
 
-
-    void OnVideo1Prepared() {
+    public void Play() {
         player1.PlayVideo();
-        Debug.Log("Video 1 prepare complete!!!");
+        player2.PlayVideo();
+    }
+
+    public void Pause() {
+        player1.PauseVideo();
+        player2.PauseVideo();
     }
 }
