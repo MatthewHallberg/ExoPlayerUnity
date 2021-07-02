@@ -24,7 +24,7 @@ public class CustomVideoPlayer : MonoBehaviour {
     }
 
     public void PlayVideo() {
-
+        ExoPlayerUnity.instance.PlayVideo(this);
     }
 
     public void PauseVideo() {

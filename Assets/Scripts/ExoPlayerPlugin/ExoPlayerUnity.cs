@@ -3,6 +3,7 @@ using System.Collections;
 using System.Runtime.InteropServices;
 using UnityEngine.Events;
 using System.Collections.Generic;
+using System.Linq;
 
 public class ExoPlayerUnity : MonoBehaviour {
 
@@ -11,10 +12,16 @@ public class ExoPlayerUnity : MonoBehaviour {
     [DllImport("RenderingPlugin")]
     static extern System.IntPtr GetRenderEventFunc();
 
-    //TODO: Make all this a class or struct and use Linq
-    List<CustomVideoPlayer> players = new List<CustomVideoPlayer>();
+    class CurrentVideo {
+        public CustomVideoPlayer videoPlayer;
+        public UnityAction callback;
+        public int videoId;
+        public int textureID;
+    }
+
+    List<CurrentVideo> currVideos = new List<CurrentVideo>();
     List<int> texturesToCreate = new List<int>();
-    Dictionary<int, UnityAction> callbacks = new Dictionary<int, UnityAction>();
+    int videoIds = 0;
 
     System.IntPtr? _VideoPlayerClass;
 
@@ -27,26 +34,29 @@ public class ExoPlayerUnity : MonoBehaviour {
         }
     }
 
-    public void PrepareVideo(string url, UnityAction callback, CustomVideoPlayer player) {
+    public void PrepareVideo(string url, UnityAction onPrepared, CustomVideoPlayer player) {
 
-        if (!players.Contains(player)) {
+        CurrentVideo currVideo = currVideos.FirstOrDefault(x => x.videoPlayer == player);
 
-            //add video to list and get ID
-            players.Add(player);
-            int videoID = players.IndexOf(player);
+        if (currVideo == null) {
 
-            //keep track of callback
-            callbacks.Add(videoID, callback);
+            currVideo = new CurrentVideo {
+                videoPlayer = player,
+                callback = onPrepared,
+                videoId = videoIds++,
+            };
+
+            currVideos.Add(currVideo);
 
             //call plugin function
             System.IntPtr methodID = AndroidJNI.GetStaticMethodID(VideoPlayerClass, "Prepare", "(Ljava/lang/String;Ljava/lang/String;)V");
             jvalue[] videoParams = new jvalue[2];
-            videoParams[0].l = AndroidJNI.NewStringUTF(videoID.ToString());
+            videoParams[0].l = AndroidJNI.NewStringUTF(currVideo.videoId.ToString());
             videoParams[1].l = AndroidJNI.NewStringUTF(url);
             AndroidJNI.CallStaticVoidMethod(VideoPlayerClass, methodID, videoParams);
 
             //add to textures list to create on render thread
-            texturesToCreate.Add(videoID);
+            texturesToCreate.Add(currVideo.videoId);
 
             //start rendering updates
             if (UpdateTextureRoutine == null) {
@@ -55,15 +65,31 @@ public class ExoPlayerUnity : MonoBehaviour {
         }
     }
 
-    public void PlayVideo() {
-
+    public void OnVideoPrepared(string playerID) {
+        CurrentVideo currVideo = currVideos.FirstOrDefault(x => x.videoId == int.Parse(playerID));
+        if (currVideo != null) {
+            currVideo.callback?.Invoke();
+        }
     }
 
-    public void PauseVideo() {
-        System.IntPtr methodID = AndroidJNI.GetStaticMethodID(VideoPlayerClass, "Pause", "(Ljava/lang/String;)V");
-        jvalue[] videoId = new jvalue[1];
-        videoId[0].l = AndroidJNI.NewStringUTF("0");
-        AndroidJNI.CallStaticVoidMethod(VideoPlayerClass, methodID, videoId);
+    public void PlayVideo(CustomVideoPlayer player) {
+        CurrentVideo currVideo = currVideos.FirstOrDefault(x => x.videoPlayer == player);
+        if (currVideo != null) {
+            System.IntPtr methodID = AndroidJNI.GetStaticMethodID(VideoPlayerClass, "Play", "(Ljava/lang/String;)V");
+            jvalue[] videoId = new jvalue[1];
+            videoId[0].l = AndroidJNI.NewStringUTF(currVideo.videoId.ToString());
+            AndroidJNI.CallStaticVoidMethod(VideoPlayerClass, methodID, videoId);
+        }
+    }
+
+    public void PauseVideo(CustomVideoPlayer player) {
+        CurrentVideo currVideo = currVideos.FirstOrDefault(x => x.videoPlayer == player);
+        if (currVideo != null) {
+            System.IntPtr methodID = AndroidJNI.GetStaticMethodID(VideoPlayerClass, "Pause", "(Ljava/lang/String;)V");
+            jvalue[] videoId = new jvalue[1];
+            videoId[0].l = AndroidJNI.NewStringUTF(currVideo.videoId.ToString());
+            AndroidJNI.CallStaticVoidMethod(VideoPlayerClass, methodID, videoId);
+        }
     }
 
     Coroutine UpdateTextureRoutine;
@@ -102,7 +128,9 @@ public class ExoPlayerUnity : MonoBehaviour {
         oesTex.Apply();
 
         // Set texture onto our material
-        players[videoID].rend.material.mainTexture = oesTex;
+        CurrentVideo currVideo = currVideos.First(x => x.videoId == videoID);
+        currVideo.textureID = externalID;
+        currVideo.videoPlayer.rend.material.mainTexture = oesTex;
     }
 
     System.IntPtr VideoPlayerClass {

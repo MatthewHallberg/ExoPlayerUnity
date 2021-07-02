@@ -11,6 +11,7 @@ public class Example : MonoBehaviour {
 
 
     void OnVideo1Prepared() {
+        player1.PlayVideo();
         Debug.Log("Video 1 prepare complete!!!");
     }
 }
