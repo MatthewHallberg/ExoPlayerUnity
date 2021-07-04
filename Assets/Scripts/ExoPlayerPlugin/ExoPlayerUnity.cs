@@ -7,6 +7,9 @@ using System.Linq;
 
 public class ExoPlayerUnity : MonoBehaviour {
 
+    [SerializeField]
+    Material nativeVideoMat;
+
     public static ExoPlayerUnity instance;
 
     [DllImport("RenderingPlugin")]
@@ -58,6 +61,9 @@ public class ExoPlayerUnity : MonoBehaviour {
             //add to textures list to create on render thread
             texturesToCreate.Add(currVideo.videoId);
 
+            //set material
+            player.rend.material = nativeVideoMat;
+
             //start rendering updates
             if (UpdateTextureRoutine == null) {
                 UpdateTextureRoutine = StartCoroutine(CallPluginAtEndOfFrames());
@@ -76,9 +82,7 @@ public class ExoPlayerUnity : MonoBehaviour {
         CurrentVideo currVideo = currVideos.FirstOrDefault(x => x.videoPlayer == player);
         if (currVideo != null) {
             System.IntPtr methodID = AndroidJNI.GetStaticMethodID(VideoPlayerClass, "Play", "(Ljava/lang/String;)V");
-            jvalue[] videoId = new jvalue[1];
-            videoId[0].l = AndroidJNI.NewStringUTF(currVideo.videoId.ToString());
-            AndroidJNI.CallStaticVoidMethod(VideoPlayerClass, methodID, videoId);
+            AndroidJNI.CallStaticVoidMethod(VideoPlayerClass, methodID, GetVideoIDParams(currVideo.videoId));
         }
     }
 
@@ -86,12 +90,66 @@ public class ExoPlayerUnity : MonoBehaviour {
         CurrentVideo currVideo = currVideos.FirstOrDefault(x => x.videoPlayer == player);
         if (currVideo != null) {
             System.IntPtr methodID = AndroidJNI.GetStaticMethodID(VideoPlayerClass, "Pause", "(Ljava/lang/String;)V");
-            jvalue[] videoId = new jvalue[1];
-            videoId[0].l = AndroidJNI.NewStringUTF(currVideo.videoId.ToString());
-            AndroidJNI.CallStaticVoidMethod(VideoPlayerClass, methodID, videoId);
+            AndroidJNI.CallStaticVoidMethod(VideoPlayerClass, methodID, GetVideoIDParams(currVideo.videoId));
         }
     }
 
+    public int GetWidth(CustomVideoPlayer player) {
+        CurrentVideo currVideo = currVideos.FirstOrDefault(x => x.videoPlayer == player);
+        if (currVideo != null) {
+            System.IntPtr methodID = AndroidJNI.GetStaticMethodID(VideoPlayerClass, "GetWidth", "(Ljava/lang/String;)I");
+            return AndroidJNI.CallStaticIntMethod(VideoPlayerClass, methodID, GetVideoIDParams(currVideo.videoId));
+        }
+        return 0;
+    }
+
+    public int GetHeight(CustomVideoPlayer player) {
+        CurrentVideo currVideo = currVideos.FirstOrDefault(x => x.videoPlayer == player);
+        if (currVideo != null) {
+            System.IntPtr methodID = AndroidJNI.GetStaticMethodID(VideoPlayerClass, "GetHeight", "(Ljava/lang/String;)I");
+            return AndroidJNI.CallStaticIntMethod(VideoPlayerClass, methodID, GetVideoIDParams(currVideo.videoId));
+        }
+        return 0;
+    }
+
+    public bool IsPlaying(CustomVideoPlayer player) {
+        CurrentVideo currVideo = currVideos.FirstOrDefault(x => x.videoPlayer == player);
+        if (currVideo != null) {
+            System.IntPtr methodID = AndroidJNI.GetStaticMethodID(VideoPlayerClass, "GetIsPlaying", "(Ljava/lang/String;)Z");
+            return AndroidJNI.CallStaticBooleanMethod(VideoPlayerClass, methodID, GetVideoIDParams(currVideo.videoId));
+        }
+        return false;
+    }
+
+    public void SetLooping(bool looping, CustomVideoPlayer player) {
+        CurrentVideo currVideo = currVideos.FirstOrDefault(x => x.videoPlayer == player);
+        if (currVideo != null) {
+            System.IntPtr methodID = AndroidJNI.GetStaticMethodID(VideoPlayerClass, "SetLooping", "(ZLjava/lang/String;)V");
+            jvalue[] setLoopingParams = new jvalue[2];
+            setLoopingParams[0].z = looping;
+            setLoopingParams[1].l = AndroidJNI.NewStringUTF(currVideo.videoId.ToString());
+            AndroidJNI.CallStaticVoidMethod(VideoPlayerClass, methodID, setLoopingParams);
+        }
+    }
+
+    jvalue[] GetVideoIDParams(int videoID) {
+        jvalue[] videoParams = new jvalue[1];
+        videoParams[0].l = AndroidJNI.NewStringUTF(videoID.ToString());
+        return videoParams;
+    }
+
+    System.IntPtr VideoPlayerClass {
+        get {
+            if (!_VideoPlayerClass.HasValue) {
+                System.IntPtr myVideoPlayerClass = AndroidJNI.FindClass("com/matthew/videoplayer/NativeVideoPlayer");
+                _VideoPlayerClass = AndroidJNI.NewGlobalRef(myVideoPlayerClass);
+                AndroidJNI.DeleteLocalRef(myVideoPlayerClass);
+            }
+            return _VideoPlayerClass.GetValueOrDefault();
+        }
+    }
+
+    #region Rendering
     Coroutine UpdateTextureRoutine;
     IEnumerator CallPluginAtEndOfFrames() {
         while (true) {
@@ -133,14 +191,5 @@ public class ExoPlayerUnity : MonoBehaviour {
         currVideo.videoPlayer.rend.material.mainTexture = oesTex;
     }
 
-    System.IntPtr VideoPlayerClass {
-        get {
-            if (!_VideoPlayerClass.HasValue) {
-                System.IntPtr myVideoPlayerClass = AndroidJNI.FindClass("com/matthew/videoplayer/NativeVideoPlayer");
-                _VideoPlayerClass = AndroidJNI.NewGlobalRef(myVideoPlayerClass);
-                AndroidJNI.DeleteLocalRef(myVideoPlayerClass);
-            }
-            return _VideoPlayerClass.GetValueOrDefault();
-        }
-    }
+    #endregion
 }
