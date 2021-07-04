@@ -65,6 +65,21 @@ public class CustomVideoPlayer : MonoBehaviour {
         }
     }
 
+    public void StopVideo() {
+
+        if (!IsPrepared()) {
+            return;
+        }
+
+        isPrepared = false;
+
+        if (Application.platform == RuntimePlatform.Android)
+            ExoPlayerUnity.instance.StopVideo(this);
+        else {
+            videoPlayer.Stop();
+        }
+    }
+
     public int GetWidth() {
 
         if (!IsPrepared()) {
@@ -106,10 +121,12 @@ public class CustomVideoPlayer : MonoBehaviour {
 
     //pass in format 0 - 1
     public void SetPlaybackPosition(float value) {
-        float newTime = value * (float)videoPlayer.length;
-        videoPlayer.Pause();
-        videoPlayer.time = newTime;
-        videoPlayer.Play();
+
+        if (Application.platform == RuntimePlatform.Android)
+            ExoPlayerUnity.instance.SetPlaybackPercent(this, value);
+        else {
+            videoPlayer.time = value * (float)videoPlayer.length;
+        }
     }
 
     //returns format 0-1
@@ -139,9 +156,9 @@ public class CustomVideoPlayer : MonoBehaviour {
         }
     }
 
-    bool IsPrepared() {
+    public bool IsPrepared() {
         if (!isPrepared) {
-            Debug.Log("Must Prepare Video First!");
+            Debug.Log("Actions cannot be completed if video is not prepared.");
         }
         return isPrepared;
     }

@@ -15,6 +15,9 @@ public class ExoPlayerUnity : MonoBehaviour {
     [DllImport("RenderingPlugin")]
     static extern System.IntPtr GetRenderEventFunc();
 
+    [DllImport("RenderingPlugin")]
+    static extern void DeleteSurfaceID(int surfaceID);
+
     class CurrentVideo {
         public CustomVideoPlayer videoPlayer;
         public UnityAction callback;
@@ -94,6 +97,23 @@ public class ExoPlayerUnity : MonoBehaviour {
         }
     }
 
+    public void StopVideo(CustomVideoPlayer player) {
+        CurrentVideo currVideo = currVideos.FirstOrDefault(x => x.videoPlayer == player);
+        if (currVideo != null) {
+
+            //call stop from exo player
+            System.IntPtr methodID = AndroidJNI.GetStaticMethodID(VideoPlayerClass, "Stop", "(Ljava/lang/String;)V");
+            AndroidJNI.CallStaticVoidMethod(VideoPlayerClass, methodID, GetVideoIDParams(currVideo.videoId));
+
+            //delete surface texture from update list
+            DeleteSurfaceID(currVideo.textureID);
+
+            //delete reference from here
+            currVideos.Remove(currVideo);
+            currVideo = null;
+        }
+    }
+
     public float Duration(CustomVideoPlayer player) {
         CurrentVideo currVideo = currVideos.FirstOrDefault(x => x.videoPlayer == player);
         if (currVideo != null) {
@@ -112,6 +132,17 @@ public class ExoPlayerUnity : MonoBehaviour {
         }
 
         return 0;
+    }
+
+    public void SetPlaybackPercent(CustomVideoPlayer player, float val) {
+        CurrentVideo currVideo = currVideos.FirstOrDefault(x => x.videoPlayer == player);
+        if (currVideo != null) {
+            System.IntPtr methodID = AndroidJNI.GetStaticMethodID(VideoPlayerClass, "SetPlaybackPosition", "(DLjava/lang/String;)V");
+            jvalue[] setPlaybackPositionParams = new jvalue[2];
+            setPlaybackPositionParams[0].d = val;
+            setPlaybackPositionParams[1].l = AndroidJNI.NewStringUTF(currVideo.videoId.ToString());
+            AndroidJNI.CallStaticVoidMethod(VideoPlayerClass, methodID, setPlaybackPositionParams);
+        }
     }
 
     public int GetWidth(CustomVideoPlayer player) {
