@@ -91,6 +91,54 @@ public class CustomVideoPlayer : MonoBehaviour {
         }
     }
 
+    public void SetLooping(bool shouldLoop) {
+
+        if (!IsPrepared()) {
+            return;
+        }
+
+        if (Application.platform == RuntimePlatform.Android)
+            ExoPlayerUnity.instance.SetLooping(shouldLoop, this);
+        else {
+            videoPlayer.isLooping = shouldLoop;
+        }
+    }
+
+    //pass in format 0 - 1
+    public void SetPlaybackPosition(float value) {
+        float newTime = value * (float)videoPlayer.length;
+        videoPlayer.Pause();
+        videoPlayer.time = newTime;
+        videoPlayer.Play();
+    }
+
+    //returns format 0-1
+    public float GetCurrentPlaybackPercent() {
+
+        if (!IsPrepared()) {
+            return 0;
+        }
+
+        if (Application.platform == RuntimePlatform.Android)
+            return ExoPlayerUnity.instance.GetPlaybackPercent(this);
+        else {
+            return (float)videoPlayer.time / (float)videoPlayer.length;
+        }
+    }
+
+    public bool IsPlaying() {
+
+        if (!IsPrepared()) {
+            return false;
+        }
+
+        if (Application.platform == RuntimePlatform.Android)
+            return ExoPlayerUnity.instance.IsPlaying(this);
+        else {
+            return videoPlayer.isPlaying;
+        }
+    }
+
     bool IsPrepared() {
         if (!isPrepared) {
             Debug.Log("Must Prepare Video First!");

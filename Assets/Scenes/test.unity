@@ -1112,7 +1112,19 @@ MonoBehaviour:
   m_Value: 0
   m_OnValueChanged:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1072901964}
+        m_TargetAssemblyTypeName: Example, Assembly-CSharp
+        m_MethodName: OnSliderValueChanged
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &749401610
 GameObject:
   m_ObjectHideFlags: 0
@@ -1510,6 +1522,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   player1: {fileID: 257598846}
   player2: {fileID: 434304282}
+  slider: {fileID: 678594229}
 --- !u!4 &1072901965
 Transform:
   m_ObjectHideFlags: 0

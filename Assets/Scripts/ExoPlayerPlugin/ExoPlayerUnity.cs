@@ -94,6 +94,26 @@ public class ExoPlayerUnity : MonoBehaviour {
         }
     }
 
+    public float Duration(CustomVideoPlayer player) {
+        CurrentVideo currVideo = currVideos.FirstOrDefault(x => x.videoPlayer == player);
+        if (currVideo != null) {
+            System.IntPtr methodID = AndroidJNI.GetStaticMethodID(VideoPlayerClass, "GetLength", "(Ljava/lang/String;)J");
+            return AndroidJNI.CallStaticLongMethod(VideoPlayerClass, methodID, GetVideoIDParams(currVideo.videoId));
+        }
+
+        return 0;
+    }
+
+    public float GetPlaybackPercent(CustomVideoPlayer player) {
+        CurrentVideo currVideo = currVideos.FirstOrDefault(x => x.videoPlayer == player);
+        if (currVideo != null) {
+            System.IntPtr methodID = AndroidJNI.GetStaticMethodID(VideoPlayerClass, "GetPlaybackPosition", "(Ljava/lang/String;)D");
+            return (float)AndroidJNI.CallStaticDoubleMethod(VideoPlayerClass, methodID, GetVideoIDParams(currVideo.videoId));
+        }
+
+        return 0;
+    }
+
     public int GetWidth(CustomVideoPlayer player) {
         CurrentVideo currVideo = currVideos.FirstOrDefault(x => x.videoPlayer == player);
         if (currVideo != null) {
