@@ -7,16 +7,16 @@ using System.Linq;
 
 public class ExoPlayerUnity : MonoBehaviour {
 
-    [SerializeField]
-    Material nativeVideoMat;
-
     public static ExoPlayerUnity instance;
 
     [DllImport("RenderingPlugin")]
     static extern System.IntPtr GetRenderEventFunc();
 
     [DllImport("RenderingPlugin")]
-    static extern void DeleteSurfaceID(int surfaceID);
+    static extern void RegisterUnityTextureID(int videoId, int UnityTextureID);
+
+    [DllImport("RenderingPlugin")]
+    static extern void DeleteSurfaceID(int videoId);
 
     class CurrentVideo {
         public CustomVideoPlayer videoPlayer;
@@ -49,10 +49,24 @@ public class ExoPlayerUnity : MonoBehaviour {
             currVideo = new CurrentVideo {
                 videoPlayer = player,
                 callback = onPrepared,
-                videoId = videoIds++,
+                videoId = videoIds++
             };
 
             currVideos.Add(currVideo);
+
+            Texture2D videoTex = new Texture2D(
+                1080,
+                1920,
+                TextureFormat.ARGB32,
+                false);
+
+            videoTex.Apply();
+
+            //pass texture to plugin
+            RegisterUnityTextureID(currVideo.videoId, (int)videoTex.GetNativeTexturePtr());
+
+            // Set texture onto our material
+            currVideo.videoPlayer.rend.material.mainTexture = videoTex;
 
             //call plugin function
             System.IntPtr methodID = AndroidJNI.GetStaticMethodID(VideoPlayerClass, "Prepare", "(Ljava/lang/String;Ljava/lang/String;)V");
@@ -63,9 +77,6 @@ public class ExoPlayerUnity : MonoBehaviour {
 
             //add to textures list to create on render thread
             texturesToCreate.Add(currVideo.videoId);
-
-            //set material
-            player.rend.material = nativeVideoMat;
 
             //start rendering updates
             if (UpdateTextureRoutine == null) {
@@ -204,6 +215,7 @@ public class ExoPlayerUnity : MonoBehaviour {
     Coroutine UpdateTextureRoutine;
     IEnumerator CallPluginAtEndOfFrames() {
         while (true) {
+
             yield return new WaitForEndOfFrame();
 
             //create textures on render thread only
@@ -217,29 +229,6 @@ public class ExoPlayerUnity : MonoBehaviour {
             //update all textures
             GL.IssuePluginEvent(GetRenderEventFunc(), -1);
         }
-    }
-
-    public void CreateOESTexture(string videoInfo) {
-        //get video info from message
-        string[] info = videoInfo.Split(',');
-        int videoID = int.Parse(info[0]);
-        int externalID = int.Parse(info[1]);
-
-        Debug.Log("Texture ID from Unity: " + externalID);
-        Texture2D oesTex = Texture2D.CreateExternalTexture(
-            0,
-            0,
-            TextureFormat.RGB24,
-            false,
-            true,
-            (System.IntPtr)externalID);
-
-        oesTex.Apply();
-
-        // Set texture onto our material
-        CurrentVideo currVideo = currVideos.First(x => x.videoId == videoID);
-        currVideo.textureID = externalID;
-        currVideo.videoPlayer.rend.material.mainTexture = oesTex;
     }
 
     #endregion

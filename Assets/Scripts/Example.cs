@@ -18,18 +18,16 @@ public class Example : MonoBehaviour {
 
     void Prepare() {
         player1.PrepareVideo("https://matthewhallberg.com/video/holo.mp4", OnPlayer1Prepared);
-        player2.PrepareVideo("https://matthewhallberg.com/video/screen.mp4", OnPlayer2Prepared);
+        //player2.PrepareVideo("https://matthewhallberg.com/video/screen.mp4", OnPlayer2Prepared);
     }
 
     void OnPlayer1Prepared() {
-        Debug.Log("1 Size: " + player1.GetWidth() + " : " + player1.GetHeight());
         player1.SetLooping(true);
         player1.PlayVideo();
         StartCoroutine(UpdateSliderRoutine());
     }
 
     void OnPlayer2Prepared() {
-        Debug.Log("2 Size: " + player2.GetWidth() + " : " + player2.GetHeight());
         player2.SetLooping(true);
         player2.PlayVideo();
     }
@@ -37,7 +35,7 @@ public class Example : MonoBehaviour {
     public void Play() {
         if (player1.IsPrepared()) {
             player1.PlayVideo();
-            player2.PlayVideo();
+            //player2.PlayVideo();
         } else {
             Prepare();
         }
@@ -45,13 +43,13 @@ public class Example : MonoBehaviour {
 
     public void Pause() {
         player1.PauseVideo();
-        player2.PauseVideo();
+        //player2.PauseVideo();
     }
 
     public void Stop() {
         StopAllCoroutines();
         player1.StopVideo();
-        player2.StopVideo();
+        //player2.StopVideo();
         sliderMoving = false;
         slider.value = 0;
     }
@@ -66,7 +64,7 @@ public class Example : MonoBehaviour {
     public void OnSliderMoved(float value) {
         if (sliderMoving) {
             player1.SetPlaybackPosition(value);
-            player2.SetPlaybackPosition(value);
+            //player2.SetPlaybackPosition(value);
         }
     }
 

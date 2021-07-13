@@ -8,6 +8,12 @@ public class CustomVideoPlayer : MonoBehaviour {
     [HideInInspector]
     public Renderer rend;
 
+    [HideInInspector]
+    public int width;
+
+    [HideInInspector]
+    public int height;
+
     VideoPlayer videoPlayer;
     UnityAction prepareCallback;
 
@@ -24,14 +30,20 @@ public class CustomVideoPlayer : MonoBehaviour {
 
     public void PrepareVideo(string url, UnityAction callback) {
         prepareCallback = callback;
-        if (Application.platform == RuntimePlatform.Android)
-            ExoPlayerUnity.instance.PrepareVideo(url, callback, this);
-        else {
+        if (Application.platform == RuntimePlatform.Android) {
+            ExoPlayerUnity.instance.PrepareVideo(url, OnPreparedAndroid, this);
+        } else {
             videoPlayer.url = url;
             videoPlayer.prepareCompleted += OnPreparedUnity;
             videoPlayer.Prepare();
         }
         isPrepared = true;
+    }
+
+    void OnPreparedAndroid() {
+        width = GetWidth();
+        height = GetHeight();
+        prepareCallback?.Invoke();
     }
 
     void OnPreparedUnity(VideoPlayer player) {
@@ -80,7 +92,7 @@ public class CustomVideoPlayer : MonoBehaviour {
         }
     }
 
-    public int GetWidth() {
+    int GetWidth() {
 
         if (!IsPrepared()) {
             return 0;
@@ -93,7 +105,7 @@ public class CustomVideoPlayer : MonoBehaviour {
         }
     }
 
-    public int GetHeight() {
+    int GetHeight() {
 
         if (!IsPrepared()) {
             return 0;

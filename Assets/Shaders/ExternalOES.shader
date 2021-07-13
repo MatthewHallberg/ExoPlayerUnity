@@ -4,11 +4,11 @@ Shader "Custom/ExternalOES"
     //converts to linear color space
     Properties
     {
-        [HideInInspector] _MainTex ("Texture", 2D) = "white" {}
+        _MainTex ("Texture", 2D) = "white" {}
     }
-        SubShader
+    SubShader
     {
-        Tags { "RenderType" = "Geometry" }
+        Tags { "RenderType" = "Geometry"}
         Pass
         {
             GLSLPROGRAM
